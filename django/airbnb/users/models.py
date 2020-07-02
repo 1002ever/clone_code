@@ -37,7 +37,7 @@ class User(AbstractUser):
     # null = True 만으로는 해당 값을 공백으로 둔 채로 저장이 불가
     # null = True 는 DB에 값을 저장하지 않아도 된다는 의미
     # blank = True 는 페이지에서 값을 입력하지 않아도 된다는 의미
-    avatar = models.ImageField(blank=True)
+    avatar = models.ImageField(upload_to="avatars", blank=True)
     gender = models.CharField(
         choices=GENDER_CHOICES, max_length=10, blank=True
     )
