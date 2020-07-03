@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+  Home
+{% endblock page_title %}
+
+{% block content %}
+
+  {{ now }}
+
+
+  <!-- 파이썬으로 직접 페이지네이터 구현 시
+  <h5>Page {{page}} of {{pages}}</h5>
+
+  {% if page is not 1 %}
+    <a href="?page={{page|add:-1}}">Previous</a>
+  {% endif %}
+  {% for page in page_range %}
+    <a href="?page={{page}}">{{page}}</a>
+  {% endfor %}
+  {% if not page == pages %}
+    <a href="?page={{page|add:1}}">Next</a>
+  {% endif %} -->
+
+  <!-- 1. Class Based Views가 아닐 때 -->
+  <!-- object_list는 views에서의 page가 갖고 있음 -->
+  <!-- {# for room in page.object_list #} -->
+
+  <!-- 2. Class Based Views일 떄 -->
+  <!-- 저절로 object_list를 호출이 가능. -->
+  {% for room in object_list %}
+    <h3>
+      <a href="{% url "rooms:detail" room.pk %}">{{room.name}} / ${{room.price}}</a>
+    </h3>
+  {% endfor %}
+
+  <h5>
+    <!-- 1번 방식으로 하고싶으면, page_obj를 page로 바꿔주면 됨 -->
+
+    {% if page_obj.has_previous %}
+      <!-- previous_page_number는 함수지만 이대로 사용이 가능.. -->
+      <a href="?page={{page_obj.previous_page_number}}">Previous</a>
+    {% endif %}
+
+    {% for page in page_obj.paginator.page_range %}
+      <a href="?page={{page}}">{{page}}</a>
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a href="?page={{page_obj.next_page_number}}">Next</a>
+    {% endif %}
+
+    <!-- 1번 방식 -->
+    <!-- Page {{page.number}} / {{page.paginator.num_pages}} -->
+
+    <!-- 2번 방식 -->
+    <!-- page_obj는 paginator를 자동으로 담고 있다. -->
+    Page {{page_obj.number}} / {{page_obj.paginator.num_pages}}
+  </h5>
+  
+{% endblock %}

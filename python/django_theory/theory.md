@@ -230,6 +230,14 @@ print(sonata.color, sonata.price)  # green $40
 
   
 
+- URL 요청은 모두 **GET 요청**
+
+  => 루트/?page=1&city=Seoul  페이지로 들어가면
+
+  ​      <u>request.GET 값은 {'page': ['2'], 'city': ['seoul']} 의 QueryDict 를 가진다.</u>
+
+  
+
 - Django의 verbose_name_plural 기본 설정 때문에   `<< 이는 class Meta 의 기본 설정 때문 >>`
 
   각 클래스의 이름 뒤에는 s가 자동으로 붙는다.
@@ -371,22 +379,66 @@ print(sonata.color, sonata.price)  # green $40
 
   
 
-- Django 프로젝트에서 가짜 데이터를 빠르게 만들고 싶을 때?
+- Django 프로젝트에서 DB를 일괄적으로 저장하고 싶을 때?
 
-  => django-seed 사용
+  => Command 설정
 
   - app 폴더 내에 management 폴더 생성
+
   - management 폴더 내 \_\_init\_\_.py 파일 생성
+
   - management 폴더 내 commands 폴더 생성
+
   - commands 폴더 내 \_\_init\_\_.py 파일 생성
+
   - commands 폴더 내 \`원하는파일명\`.py 생성  => <u>이것이 데이터 생성을 수행할 파이썬 파일</u> 
-    - \`원하는파일명\`.py 속에 Command 클래스 작성
-    - 터미널에 python manage.py \`파일명\` --times \`원하는 횟수\` 입력
-    - 
+
+    - \`원하는파일명\`.py 속에 Command 클래스 작성 => BaseCommand 상속 필요
+
+    - 해당 클래스에는 handle 함수가 필수로 정의되어야 함
+
+      ```python
+      # 예시
+      from django.core.management.base import BaseCommand
+      from rooms.models import Facility
+      
+      class Command(BaseCommand):
+          
+          help = 'This command creates facilities.'
+      
+          def handle(self, *args, **options):
+              facilities = [
+                  "Private entrance",
+                  "Paid parking on premises",
+                  "Paid parking off premises",
+                  "Elevator",
+                  "Parking",
+                  "Gym",
+              ]
+              for f in facilities:
+                  Facility.objects.create(name=f)
+              self.stdout.write(self.style.SUCCESS("Facilities created!"))
+      ```
+
+    - 터미널에서 python manage.py \`원하는파일명\`  입력 시 handle 함수 수행
 
   
 
+- Django 프로젝트에서 DB에 fake 데이터를 생성하여 저장하고 싶을 때?
 
+  => django-seed 활용
+
+  ​	   \# 장고 시드 설치
+
+  - pipenv install django_seed
+
+    \# INSTALLED_APPS 에 django_seed 추가
+
+  - INSTALLED_APPS = [ ..., "django_seed", ]
+
+  - 
+
+  
 
 - Model 관련
 

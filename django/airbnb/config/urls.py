@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("core.urls", namespace="core")),
     # path("users", include("users.urls", namespace="users")),
+    path("rooms/", include("rooms.urls", namespace="rooms")),
 ]
 
 # 개발자 모드일 때는 로컬 파일루트로 들어오도록 설정
