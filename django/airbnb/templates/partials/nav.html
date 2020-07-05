@@ -1,4 +1,16 @@
 <a href="{% url "core:home"%}">Home</a>
 <ul>
-  <li><a href="#">Login</a></li>
+
+  <!-- user를 건네준 적이 없는데
+      어떻게 user로 바로 접근이 가능한가?
+      Django의 template은 context_processors 라는 함수를 지님
+      context_processors는 쿠키의 몇몇 정보를 가져와서
+      template에 자동으로 넣어주는 역할을 함
+    -->
+  {% if user.is_authenticated %}
+    <li><a href="{% url "users:logout" %}">Log Out</a></li>
+  {% else %}
+    <li><a href="{% url "users:login" %}">Log In</a></li>
+  {% endif %}
+
 </ul>

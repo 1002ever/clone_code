@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+  Log In
+{% endblock page_title %}
+
+{% block search-bar %}
+{% endblock search-bar %}
+
+{% block content %}
+
+  <!-- 이런식으로 로그인하게 되면
+      브라우저는 백엔드로 쿠키를 주게 됨
+      이는 도메인에 의해서 이뤄지는데,
+      백엔드는 이 쿠키를 해당 도메인에 접근 시 마다
+      쿠키를 도메인에 보내서 확인 요청 함 
+      문제는 다르사이트에서 해당 쿠키를 조작하거나
+      쿠키를 훔쳐서 악용할 수 있음 
+      => 장고는 이를 csrf_token 이라는 토큰을 줘서
+        그 쿠키가 해당 사이트와 로컬 사이에
+        주고받아진 것인지 확인 함-->
+
+  <form method="POST" action="{% url "users:login" %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button>Login</button>
+  </form>
+{% endblock %}

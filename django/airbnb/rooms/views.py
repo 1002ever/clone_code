@@ -11,7 +11,7 @@
 
 # 2번 방식으로 했을 때 import
 
-from django.shortcuts import render, redirectf
+from django.shortcuts import render, redirect
 from django_countries import countries
 from django.urls import reverse
 from django.utils import timezone
