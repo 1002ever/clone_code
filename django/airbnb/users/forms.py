@@ -57,3 +57,77 @@ class LoginForm(forms.Form):
 
         except models.User.DoesNotExist:
             self.add_error("email", forms.ValidationError("User does not exist"))
+
+
+# 모델폼이 아니라 폼을 일일이 작성해주는 방법
+
+class SignupForm(forms.Form):
+    
+    first_name = forms.CharField(max_length=80)
+    last_name = forms.CharField(max_length=80)
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+    password1 = forms.CharField(widget=forms.PasswordInput, label="Confirm Password")
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        try:
+            models.User.objects.get(email=email)
+            raise forms.ValidationError("User already exists with that email")
+        except models.User.DoesNotExist:
+            return email
+
+    def clean_password1(self):
+        password = self.cleaned_data.get("password")
+        password1 = self.cleaned_data.get("password1")
+
+        if password != password1:
+            raise forms.ValidationError("Password confirmation does not match")
+        else:
+            return password
+
+    def save(self):
+        first_name = self.cleaned_data.get("first_name")
+        last_name = self.cleaned_data.get("last_name")
+        email = self.cleaned_data.get("email")
+        password = self.cleaned_data.get("password")
+
+        # 그냥 create가 아닌 create_user를 써야
+        # password를 암호화하여 저장해줌
+        # 순서대로 username, email, password를 인자로 받음
+        user = models.User.objects.create_user(email, email, password)
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
+
+
+# 폼과 모델을 자동으로 연동해주는
+# 모델폼 활용
+# => clean_data 와 save 를 자동으로 해준다.
+
+# class SignupForm(forms.ModelForm):
+#     class Meta:
+#         model = models.User
+#         fields = ["first_name", "last_name", "email",]
+
+#     password = forms.CharField(widget=forms.PasswordInput)
+#     password1 = forms.CharField(widget=forms.PasswordInput, label="Confirm Password")
+
+#     def clean_password1(self):
+#         password = self.cleaned_data.get("password")
+#         password1 = self.cleaned_data.get("password1")
+#         if password != password1:
+#             raise forms.ValidationError("Password confirmation does not match")
+#         else:
+#             return password
+
+#     # ModelForm save 오버라이딩은
+#     # Form 과 오버라이딩 인자가 다름
+#     def save(self, *args, **kwargs):
+#         email = self.cleaned_data.get("email")
+#         password = self.cleaned_data.get("password")
+#         user = super().save(commit=False)
+#         user.username = email
+#         # 패스워드를 암호화(해싱) 해줌
+#         user.set_password(password)
+#         user.save()

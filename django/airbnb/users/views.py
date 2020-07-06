@@ -3,7 +3,7 @@ from django.views import View
 from django.urls import reverse_lazy
 from django.views.generic import FormView
 from django.contrib.auth import authenticate, login, logout
-from . import forms
+from . import forms, models
 
 
 # 로그인 요소 수동 작성
@@ -73,6 +73,8 @@ class LoginView(FormView):
     # 아래와 같이 오버라이딩 해주면 됨
 
     # 사용자 설정의 form_valid
+    # form 이라는 변수는 위에서 form_class를 정해줄 때
+    # 자동으로 들어간다.
     def form_valid(self, form):
         email = form.cleaned_data.get("email")
         password = form.cleaned_data.get("password")
@@ -81,3 +83,45 @@ class LoginView(FormView):
             login(self.request, user)
 
         return super().form_valid(form)
+
+
+class SignupView(FormView):
+    template_name = "users/signup.html"
+    form_class = forms.SignupForm
+    success_url = reverse_lazy("core:home")
+
+    initial = {
+        "first_name": "yw",
+        "last_name": "k",
+        "email": "1002ever@naver.com",
+    }
+
+    # 폼이 유효할 떄 수행하는 함수 => 회원가입 완료 시 수행
+    def form_valid(self, form):
+        # DB 저장
+        form.save()
+
+        # 가입 완료 시 로그인
+        email = form.cleaned_data.get("email")
+        password = form.cleaned_data.get("password")
+        user = authenticate(self.request, username=email, password=password)
+        if user is not None:
+            login(self.request, user)
+        
+        user.verify_email()
+
+        return super().form_valid(form)
+
+
+def complete_verification(request, key):
+    try:
+        user = models.User.objects.get(email_secret=key)
+        user.email_verified = True
+        user.email_secret = ""
+        user.save()
+        # to do: add success message
+    except models.User.DoesNotExist:
+        # to do: add error message
+        pass
+
+    return redirect(reverse("core:home"))

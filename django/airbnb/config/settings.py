@@ -121,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-kr'
 
 TIME_ZONE = 'Asia/Seoul'
 
@@ -137,9 +137,29 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
 AUTH_USER_MODEL = 'users.User'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
 
 MEDIA_URL = "/media/"
+
+# Email Configuration
+# SMTP settings 로 셋팅 (본 프로젝트에서는 mailgun 사용)
+# HOST_USER, HOST_PASSWORD는 비밀로 하고 싶은 경우가 대부분
+# .env 파일 설정 필요 => django-dotenv 설치 필요
+# ㄱ. 숨길 변수들 .env에 저장
+# ㄴ. manage.py에 dotenv import
+# ㄷ. manage.py의 main 문 수행 전 dotenv.read_dotenv() 호출 추가
+# ㄹ. .gitignore에 .env 추가
+
+EMAIL_HOST = "smtp.mailgun.org"
+EMAIL_PORT = "587"
+EMAIL_HOST_USER = os.environ.get("MAILGUN_USERNAME")
+EMAIL_HOST_PASSWORD = os.environ.get("MAILGUN_PASSWORD")
+
+
+# 이건 누구로부터 보내졌는지
+# 수신인에게 보여지는 메일주소이므로
+# 마음대로 정해도 상관 없음
+# 단 도메인은 메일건이어야 함
+EMAIL_FROM = "kyw@sandboxbb95ac607f78427cb77e6927118eb790.mailgun.org"

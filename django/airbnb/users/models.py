@@ -1,5 +1,11 @@
+import uuid
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.mail import send_mail
+from django.utils.html import strip_tags
+# 템플릿 로드 & 그를 string으로 바꿔주는 함수 import
+from django.template.loader import render_to_string
 
 # Create your models here.
 class User(AbstractUser):   
@@ -46,10 +52,36 @@ class User(AbstractUser):
 
     # max_length는 DB에 저장될 최대 문자열 길이
     language = models.CharField(
-        choices=LANGUAGE_CHOICES, max_length=2, blank=True
+        choices=LANGUAGE_CHOICES, max_length=2, blank=True, default=LANGUAGE_KOREAN,
     )
     currency = models.CharField(
-        choices=CURRENCY_CHOICES, max_length=3, blank=True
+        choices=CURRENCY_CHOICES, max_length=3, blank=True, default=CURRENCY_KRW,
     )
     
     superhost = models.BooleanField(default=False)
+
+    # 이메일 전송 확인 관련
+    email_verified = models.BooleanField(default=False)
+    email_secret = models.CharField(max_length=20, default="", blank=True)
+
+    def verify_email(self):
+        if self.email_verified is False:
+            secret = uuid.uuid4().hex[:20]
+            self.email_secret = secret
+
+            html_message = render_to_string("emails/verify_email.html", {"secret": secret,})
+            # 제목, 메시지, 발신인 이메일주소, 받는 주소들, 에러 처리 방식
+            send_mail(
+                "Verify Airbnb Account",
+                # html 태그를 벗긴 상태를 return하는 함수
+                # 어떤 경우, html 태그를 못 보내는 경우도 있어서
+                # 이런 text도 미리 준비 해두는 것
+                strip_tags(html_message),
+                settings.EMAIL_FROM,
+                [self.email],
+                fail_silently=False,
+                html_message=html_message,  
+            )
+
+            self.save()
+        return
