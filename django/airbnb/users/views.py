@@ -1,3 +1,5 @@
+import os
+import requests
 from django.shortcuts import render, redirect, reverse
 from django.views import View
 from django.urls import reverse_lazy
@@ -125,3 +127,97 @@ def complete_verification(request, key):
         pass
 
     return redirect(reverse("core:home"))
+
+# github oauth apps 사용법 documentation
+# https://developer.github.com/apps/building-oauth-apps/authorizing-oauth-apps/
+
+# ㄱ. github_login 함수 진입 => 깃헙 로그인 페이지 이동
+# ㄴ. authorize 성공 시 callback 함수로 가게끔 redirect
+#     => 이 과정에서 request에는 code가 담김
+# ㄷ. code 및 여러 인자를 쓰면 token을 받아 올 수 있음.
+#     => 이를 requests 라이브러리를 이용하여 받아옴
+# ㄹ. token을 이용하여 github api를 가져옴
+# ㅁ. github api를 받아오는 데 성공하면 이를 바탕으로 회원가입 및 로그인 진행
+
+def github_login(request):
+
+    client_id = os.environ.get("GH_ID")
+    redirect_uri = "http://127.0.0.1:8000/users/login/github/callback"
+
+    return redirect(f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=read:user")
+
+class GithubException(Exception):
+    # 원하는 만큼 exception 추가 가능
+    pass
+
+def github_callback(request):
+
+    try:
+        # 깃헙 로그인 시 코드를 줌
+        # access token을 받기 위한 코드를 주는 것
+        # token을 갖게 되면 github api에 접근이 가능
+
+        client_id = os.environ.get("GH_ID")
+        client_secret = os.environ.get("GH_SECRET")
+        code = request.GET.get("code", None)
+
+        if code is not None:
+            token_request = requests.post(
+                f"https://github.com/login/oauth/access_token?client_id={client_id}&client_secret={client_secret}&code={code}",
+                headers={"Accept": "application/json"}
+            )
+            token_request_json = token_request.json()
+            error = token_request_json.get("error", None)
+
+            if error is not None:
+                raise GithubException()
+            else:
+                access_token = token_request_json.get("access_token")
+                profile_request = requests.get(
+                    "https://api.github.com/user",
+                    headers={
+                        "Authorization": f"token {access_token}",
+                        "Accept": "application/json",                   
+                    },
+                )
+
+                # 요청이 제대로 이뤄지고, github API 까지 따왔다면
+                # 받아온 json에 login 값이 있을 것이므로
+                # status 용도로 username을 지정
+                profile_json = profile_request.json()
+                username = profile_json.get("login", None)
+                print(profile_json)
+
+                if username is not None:
+                    # profile_json에 email, name, bio이 없어서
+                    # 일단은 임시로 값 할당..
+                    name = "kyw"
+                    email = "1002ever@naver.com"
+                    bio = ""
+                    try:
+                        # 이미 해당 이메일로 유저가 있고,
+                        # 그게 깃헙으로 가입한 사람이라면
+                        # 그냥 단순 로그인
+                        user = models.User.objects.get(email=email)
+                        if user.login_method != models.User.LOGIN_GITHUB:
+                            raise GithubException()
+                    except models.User.DoesNotExist:
+                        user = models.User.objects.create(
+                            email=email,
+                            first_name=name,
+                            username=email,
+                            bio=bio,
+                            login_method=models.User.LOGIN_GITHUB,
+                        )
+                        # 사용 안 할 비밀번호 셋팅
+                        user.set_unusable_password()
+                        user.save()
+                    login(request, user)
+                    return redirect(reverse("core:home"))
+                else:
+                    raise GithubException()
+        else:
+            raise GithubException()
+    except GithubException:
+        # send error message
+        return redirect(reverse("users:login"))
