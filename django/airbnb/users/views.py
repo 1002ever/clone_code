@@ -5,7 +5,10 @@ from django.views import View
 from django.urls import reverse_lazy
 from django.views.generic import FormView
 from django.contrib.auth import authenticate, login, logout
+from django.core.files.base import ContentFile
+from django.contrib.auth.forms import UserCreationForm
 from . import forms, models
+
 
 
 # 로그인 요소 수동 작성
@@ -89,7 +92,12 @@ class LoginView(FormView):
 
 class SignupView(FormView):
     template_name = "users/signup.html"
-    form_class = forms.SignupForm
+    
+    # 수동 폼 작성한 것을 할당
+    #   => 장고가 제공하는 폼 기능을 사용할 수 없음
+    # form_class = forms.SignupForm
+    form_class = UserCreationForm
+
     success_url = reverse_lazy("core:home")
 
     initial = {
@@ -272,6 +280,7 @@ def kakao_callback(request):
 
         properties = profile_json.get("properties")
         nickname = properties.get("nickname")
+        profile_image = properties.get("profile_image")
 
         try:
             user = models.User.objects.get(email=email)
@@ -288,6 +297,18 @@ def kakao_callback(request):
             )
             user.set_unusable_password()
             user.save()
+
+            if profile_image is not None:
+                photo_request = requests.get(profile_image)
+                
+                # ImageField와 FileField는 아래와 같이
+                # 저장이 가능.. => 장고 문서도 한 번 다시 보기.
+                # 인자는 순서대로 저장할 파일이름, 파일
+
+                # ContentFile은 0, 1로만 이뤄진 가공되지 않은 data형태를
+                # 파일 형태로 포장하여 전달하는 역할
+
+                user.avatar.save(f"{nickname}-avatar", ContentFile(photo_request.content))
 
         login(request, user)
         return redirect(reverse("core:home"))
